@@ -126,52 +126,21 @@ nav{
 
 #scene{
   position:absolute;width:100%;height:100%;
+  transform-style:preserve-3d;
 }
 #sections-container{ position:relative;width:100%;height:100%; }
 
-/* Each panel occupies the full viewport. Only the active one is interactive
-   and fully opaque — neighbors are pushed off-screen rather than blur-stacked
-   in place, which is what caused the overlap/flicker. */
 .layer{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:0 60px;
-  opacity:0;
-  pointer-events:none;
-  transform:translateY(40px) scale(0.96);
-  transition:opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
-  will-change:transform,opacity;
-}
-.layer.active{
-  opacity:1;
-  pointer-events:auto;
-  transform:translateY(0) scale(1);
-}
-.layer.prev{
-  opacity:0;
-  transform:translateY(-40px) scale(0.96);
-}
-@media (prefers-reduced-motion:reduce){
-  .layer{ transition:opacity 0.3s linear; transform:none !important; }
+  position:absolute;left:50%;top:50%;
+  transform-style:preserve-3d;
+  will-change:transform,opacity,filter;
 }
 
 /* soft surface — no hard borders, soft glow edges instead of lines */
 .surface{
   position:relative;
   padding:8px 4px;
-  width:100%;
-  max-width:820px;
-  max-height:84vh;
-  overflow-y:auto;
-  overflow-x:hidden;
-  scrollbar-width:thin;
-  scrollbar-color:rgba(0,245,212,0.3) transparent;
 }
-.surface::-webkit-scrollbar{ width:4px; }
-.surface::-webkit-scrollbar-thumb{ background:rgba(0,245,212,0.3); border-radius:2px; }
 
 .eyebrow{
   font-family:'Barlow Condensed',sans-serif;
@@ -228,7 +197,7 @@ nav{
 .award-text .sub{ font-size:11px;color:var(--muted);margin-top:3px; }
 
 /* ---- STATS — sonar pings, scattered, not a grid ---- */
-.stats-scatter{ position:relative;width:100%;max-width:680px;height:280px; }
+.stats-scatter{ position:relative;width:680px;height:280px; }
 .ping{ position:absolute;text-align:center; }
 .ping-num{ font-family:'Barlow Condensed',sans-serif;font-weight:700;line-height:1;color:var(--white); }
 .ping-num em{ color:var(--cyan);font-style:normal; }
@@ -244,7 +213,7 @@ nav{
 }
 
 /* ---- PROJECTS — staggered organic cards, soft glow not boxes ---- */
-.projects-flow{ position:relative;width:100%;max-width:760px; }
+.projects-flow{ position:relative;width:760px; }
 .project-card{
   position:relative;
   padding:30px 8px 30px 28px;
@@ -274,7 +243,7 @@ nav{
 .skill-pip.on.hot{ background:var(--crimson); }
 
 /* ---- LEADERSHIP — offset cards, no grid lines ---- */
-.leader-flow{ position:relative;width:100%;max-width:740px; }
+.leader-flow{ position:relative;width:740px; }
 .leader-card{ position:relative;padding-left:26px;margin-bottom:30px;max-width:420px; }
 .leader-card:nth-child(2){ margin-left:280px;margin-top:-90px; }
 .leader-card:nth-child(4){ margin-left:280px; }
@@ -319,13 +288,7 @@ nav{
 }
 
 @media (max-width: 880px){
-  nav{ padding:20px 22px; }
-  .nav-links{ gap:20px; }
-  .nav-links a{ font-size:9.5px; letter-spacing:0.1em; }
-  .layer{ padding:0 22px; }
   #gauge{ display:none; }
-  #depth-indicator{ left:22px;bottom:22px;font-size:9px; }
-  #scroll-hint{ display:none; }
   .stats-scatter{ width:100%;height:auto;display:flex;flex-direction:column;gap:24px; }
   .ping{ position:relative !important;top:auto !important;left:auto !important; }
   .ping::before{ display:none; }
@@ -333,16 +296,6 @@ nav{
   .skills-flow{ flex-direction:column;gap:24px; }
   .skill-col:nth-child(2){ margin-top:0; }
   .project-card:nth-child(2),.project-card:nth-child(3),.project-card:nth-child(4){ margin-left:0; }
-  .surface{ max-height:78vh; }
-  .award-banner{ flex-direction:column;align-items:flex-start;gap:8px; }
-}
-
-@media (max-width: 480px){
-  .nav-links{ display:none; }
-  .hero-badges,.contact-links{ gap:8px; }
-  .hero-badge{ padding:6px 12px;font-size:9px; }
-  .skill-name{ min-width:0;flex:1; }
-  .skill-row{ gap:10px; }
 }
 </style>
 </head>
@@ -388,7 +341,7 @@ const sections = [
   {
     id:'hero', x:-30,y:0,
     html:`
-      <div class="surface" style="max-width:680px">
+      <div class="surface" style="width:640px">
         <div class="eyebrow" style="margin-bottom:8px">CS Engineer · Web Developer · Community Lead</div>
         <div class="hero-name" id="hero-name">AJMAL<span class="ghost">P K</span></div>
         <p class="hero-sub">Building products at the intersection of design, technology, and community. Based in Kasaragod, Kerala.</p>
@@ -438,7 +391,7 @@ const sections = [
   {
     id:'about', x:-50,y:10,
     html:`
-      <div class="surface about-wrap" style="max-width:720px">
+      <div class="surface about-wrap" style="width:680px">
         <div class="about-num">02</div>
         <div class="eyebrow">About</div>
         <div class="section-title">CODE.<br><span class="line2">BUILD.</span><br>LEAD.</div>
@@ -594,7 +547,7 @@ const sections = [
   {
     id:'contact', x:0,y:0,
     html:`
-      <div class="surface" style="max-width:660px">
+      <div class="surface" style="width:620px">
         <div class="eyebrow">Let's talk</div>
         <div class="contact-name">AJMAL<br><span style="-webkit-text-stroke:1px rgba(240,240,240,0.2);color:transparent">P K</span></div>
         <p class="contact-sub">Open to freelance web projects, startup collaborations, community work, and anything interesting. Based in Kasaragod, Kerala.</p>
