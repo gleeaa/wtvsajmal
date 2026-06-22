@@ -27,6 +27,11 @@ body{
 }
 @media (hover:hover) and (pointer:fine){ body{ cursor:none; } }
 
+@media (hover:none) and (pointer:coarse){
+  body{ cursor:auto; }
+  #cursor,#cursor-ring{ display:none; }
+}
+
 /* CUSTOM CURSOR */
 #cursor{
   position:fixed;z-index:9999;
@@ -299,6 +304,40 @@ nav{
   .skills-flow{ flex-direction:column;gap:24px; }
   .skill-col:nth-child(2){ margin-top:0; }
   .project-card:nth-child(2),.project-card:nth-child(3),.project-card:nth-child(4){ margin-left:0; }
+}
+
+@media (max-width: 640px) {
+  body { touch-action: pan-y; }
+  nav { padding:18px 20px; }
+  .nav-logo { font-size:11px; }
+  .nav-links { gap:14px; flex-wrap:wrap; justify-content:flex-end; }
+  .nav-links a { font-size:9px; }
+  #depth-indicator, #scroll-hint { display:none; }
+  #gauge { display:none; }
+  .surface { width:min(92vw, 640px) !important; padding:20px 18px 24px; }
+  .eyebrow { margin-bottom:18px; }
+  .hero-name { font-size:clamp(44px,13vw,72px); }
+  .hero-sub, .about-body, .project-desc, .contact-sub { max-width:100%; }
+  .hero-badges, .contact-links { gap:10px; }
+  .award-banner { flex-direction:column; align-items:flex-start; gap:12px; padding:16px 0 16px 20px; }
+  .about-num { display:none; }
+  .stats-scatter { width:100%; height:auto; padding:8px 0; }
+  .ping { position:relative !important; top:auto !important; left:auto !important; width:100%; text-align:left; padding-left:8px; }
+  .ping-num { font-size:32px !important; }
+  .ping-lbl { max-width:100%; }
+  .project-card { padding:22px 18px 22px 18px; margin-bottom:18px; border-left:none; border-top:1px solid rgba(255,255,255,0.08); }
+  .project-card:hover { padding-left:18px; }
+  .project-card:nth-child(2),.project-card:nth-child(3),.project-card:nth-child(4){ margin-left:0; }
+  .project-title { font-size:20px; }
+  .project-stack { gap:8px; }
+  .skills-flow { gap:18px; }
+  .skill-row { flex-wrap:wrap; align-items:flex-start; }
+  .skill-name { min-width:auto; width:100%; }
+  .leader-flow { width:100%; }
+  .leader-card { max-width:100%; padding:24px 18px; margin-left:0; margin-top:0; }
+  .leader-card:nth-child(2), .leader-card:nth-child(4) { margin-left:0; margin-top:0; }
+  .startup-wrap { max-width:100%; }
+  .footer-line { flex-direction:column; align-items:flex-start; gap:10px; }
 }
 </style>
 </head>
