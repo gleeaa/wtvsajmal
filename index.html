@@ -227,6 +227,9 @@ nav{
 .project-card:hover{ border-color:rgba(0,245,212,0.5);padding-left:38px; }
 .project-tag{ font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--crimson);margin-bottom:14px; }
 .project-title{ font-family:'Barlow Condensed',sans-serif;font-size:23px;font-weight:700;text-transform:uppercase;letter-spacing:0.02em;margin-bottom:10px; }
+.project-title a{ color:inherit; text-decoration:none; }
+.project-link-info{ font-size:11px;color:rgba(240,240,240,0.55);margin-top:8px; }
+.project-link-info a{ color:var(--cyan); text-decoration:underline; }
 .project-desc{ font-size:12px;color:var(--muted);line-height:1.75;max-width:420px; }
 .project-stack{ display:flex;flex-wrap:wrap;gap:7px;margin-top:16px; }
 .stack-chip{ font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:5px 11px;border:1px solid rgba(255,255,255,0.1);color:rgba(240,240,240,0.5);border-radius:999px; }
@@ -373,8 +376,8 @@ const sections = [
             <div class="ping-lbl">Place — Thinkovation</div>
           </div>
           <div class="ping" style="left:90px;top:200px">
-            <div class="ping-num" style="font-size:34px">6<em>.8</em></div>
-            <div class="ping-lbl">CGPA after 3 semesters</div>
+            <div class="ping-num" style="font-size:34px">10<em>+</em></div>
+            <div class="ping-lbl">Campus workshops organized</div>
           </div>
           <div class="ping" style="left:340px;top:200px">
             <div class="ping-num" style="font-size:34px">5<em>+</em></div>
@@ -392,7 +395,6 @@ const sections = [
     id:'about', x:-50,y:10,
     html:`
       <div class="surface about-wrap" style="width:680px">
-        <div class="about-num">02</div>
         <div class="eyebrow">About</div>
         <div class="section-title">CODE.<br><span class="line2">BUILD.</span><br>LEAD.</div>
         <div class="about-body">
@@ -417,8 +419,9 @@ const sections = [
         <div class="projects-flow">
           <div class="project-card">
             <div class="project-tag">Freelance · International</div>
-            <div class="project-title">Discover Atlantic Canada</div>
+            <div class="project-title"><a href="https://discoveratlanticcanada.com" target="_blank" rel="noopener">Discover Atlantic Canada</a></div>
             <p class="project-desc">Full WordPress development for an international tourism platform. Hero slideshow, Swiper carousels, interactive maps, and heavy Core Web Vitals optimization achieving top PageSpeed scores.</p>
+            <div class="project-link-info"><a href="https://discoveratlanticcanada.com" target="_blank" rel="noopener">Click here</a> to visit the site.</div>
             <div class="project-stack">
               <span class="stack-chip">WordPress</span>
               <span class="stack-chip">Elementor Pro</span>
@@ -450,8 +453,9 @@ const sections = [
           </div>
           <div class="project-card">
             <div class="project-tag">Full-stack · Next.js</div>
-            <div class="project-title">Awwwards Starter Template</div>
+            <div class="project-title"><a href="https://zashsolutions.ca" target="_blank" rel="noopener">Awwwards Starter Template</a></div>
             <p class="project-desc">Production-ready full-stack starter with Next.js, Tailwind, GSAP animations, Lenis smooth scroll, and Express backend. Awwwards-quality motion and performance standards.</p>
+            <div class="project-link-info"><a href="https://zashsolutions.ca" target="_blank" rel="noopener">Click here</a> to visit the site.</div>
             <div class="project-stack">
               <span class="stack-chip">Next.js</span>
               <span class="stack-chip">GSAP</span>
@@ -504,7 +508,7 @@ const sections = [
           </div>
           <div class="leader-card">
             <div class="leader-role">TinkerHub Learning Co-ordinator</div>
-            <div class="leader-title">Under25 Club LBSCEK</div>
+            <div class="leader-title">TinkerHub Club LBSCEK</div>
             <p class="leader-desc">Coordinated learning programs with TinkerHub for student developers. Organized workshops, mentorship sessions, and hands-on campus labs to grow peer learning.</p>
           </div>
           <div class="leader-card alt">
@@ -552,10 +556,12 @@ const sections = [
         <div class="contact-name">AJMAL<br><span style="-webkit-text-stroke:1px rgba(240,240,240,0.2);color:transparent">P K</span></div>
         <p class="contact-sub">Open to freelance web projects, startup collaborations, community work, and anything interesting. Based in Kasaragod, Kerala.</p>
         <div class="contact-links">
-          <a class="contact-link" href="mailto:your-email@example.com">Email</a>
-          <a class="contact-link" href="#" target="_blank" rel="noopener">LinkedIn</a>
-          <a class="contact-link" href="#" target="_blank" rel="noopener">GitHub</a>
-          <a class="contact-link" href="#" target="_blank" rel="noopener">Instagram</a>
+          <a class="contact-link" href="mailto:ajmalwlwl@gmail.com">Email</a>
+          <a class="contact-link" href="https://www.linkedin.com/in/ajmalllw/" target="_blank" rel="noopener">LinkedIn</a>
+          <a class="contact-link" href="https://github.com/gleeaa/" target="_blank" rel="noopener">GitHub</a>
+          <a class="contact-link" href="https://in.pinterest.com/whatevsajmal/" target="_blank" rel="noopener">Pinterest</a>
+          <a class="contact-link" href="https://www.instagram.com/whatevsajmal/" target="_blank" rel="noopener">Instagram</a>
+          <a class="contact-link" href="https://www.linkedin.com/feed/update/urn:li:activity:7290812868684374016/" target="_blank" rel="noopener">Thinkovation Cert</a>
         </div>
         <div class="footer-line">
           <span>LBS College of Engineering · Kasaragod · KTU · CSE · 2024–2028</span>
