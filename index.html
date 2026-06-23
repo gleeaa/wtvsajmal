@@ -333,6 +333,17 @@ nav{
   #depth-indicator, #scroll-hint { display:none; }
   #gauge { display:none; }
   #music-control { display:none; }
+  /* Make section surfaces scrollable on mobile so users can drag to view content
+     while preserving joystick-only navigation between sections. */
+  .surface {
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none; /* Firefox */
+    padding-right: 12px; /* small inner padding so content isn't flush to edge */
+  }
+  .surface::-webkit-scrollbar { width: 0; height: 0; }
   #mobile-joystick { display:block; }
   .surface { width:min(92vw, 640px) !important; padding:20px 18px 24px; }
   .eyebrow { margin-bottom:18px; }
@@ -727,6 +738,37 @@ window.addEventListener('wheel', (e)=>{
   setTimeout(()=>{ scrollCooldown = false; }, 550);
 }, {passive:false});
 
+// ─── MOBILE CONTENT PAN (drag follows finger 1:1, like desktop cursor) ──────
+let panStartX = 0, panStartY = 0;
+let panActive = false;
+let lastPanX = 0, lastPanY = 0;
+
+window.addEventListener('touchstart', e=>{
+  if (joystickActive) return; // don't pan if joystick is active
+  panStartX = e.touches[0].clientX;
+  panStartY = e.touches[0].clientY;
+  lastPanX = 0;
+  lastPanY = 0;
+  panActive = true;
+}, {passive:true});
+
+window.addEventListener('touchmove', e=>{
+  if (!panActive || joystickActive) return;
+  const dx = (e.touches[0].clientX - panStartX) * 0.6; // dampen to 60% speed
+  const dy = (e.touches[0].clientY - panStartY) * 0.6;
+  lastPanX = dx;
+  lastPanY = dy;
+  const currentLayer = layerEls[Math.round(scrollZ / Z_STEP)];
+  if (currentLayer){
+    currentLayer.style.transform = `translate(-50%,-50%) translate3d(${dx}px,${dy}px,${-Math.round(scrollZ / Z_STEP) * Z_STEP}px)`;
+  }
+}, {passive:true});
+
+window.addEventListener('touchend', e=>{
+  if (!panActive) return;
+  panActive = false;
+}, {passive:true});
+
 // ─── MOBILE JOYSTICK RADIAL NAVIGATION ────────────────────────────
 const joystick = document.getElementById('mobile-joystick');
 const joystickDot = document.getElementById('joystick-dot');
@@ -770,16 +812,15 @@ if (joystick){
     // Determine primary direction
     if (Math.max(absDx, absDy) >= threshold){
       if (absDy > absDx){
-        // Vertical: up or down
-        const dir = dy > 0 ? 1 : -1;
+        // Vertical: up or down navigation
+        const dir = dy > 0 ? 1 : -1; // drag down in joystick -> next section, drag up -> prev section
         if (!scrollCooldown){
           goToIndex(currentSectionIndex + dir);
           scrollCooldown = true;
           setTimeout(()=>{ scrollCooldown = false; }, 550);
         }
       } else {
-        // Horizontal: left or right
-        // Currently no action, but can be extended
+        // Horizontal: ignore
       }
     }
     joystickDot.style.transform = 'translate(-50%, -50%)';
