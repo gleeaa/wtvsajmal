@@ -350,6 +350,13 @@ nav{
 
 <canvas id="bg-canvas"></canvas>
 
+<!-- Music: local file `music.mp3` (place in project root) — fallback used when local missing -->
+<audio id="bg-music" src="music.mp3" loop preload="auto"></audio>
+<div id="music-control" style="position:fixed;left:20px;bottom:20px;z-index:120;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,0.25);padding:8px;border-radius:8px;backdrop-filter:blur(6px);">
+  <button id="music-btn" style="background:rgba(255,255,255,0.06);color:var(--white);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:6px;cursor:pointer">Play Music</button>
+  <button id="music-mute" style="background:transparent;color:var(--white);border:1px solid rgba(255,255,255,0.06);padding:6px 8px;border-radius:6px;cursor:pointer">Mute</button>
+  <input id="music-vol" type="range" min="0" max="1" step="0.01" value="0.6" style="width:110px" aria-label="Volume">
+</div>
 <nav>
   <div class="nav-logo">APK.portfolio</div>
   <ul class="nav-links">
@@ -881,6 +888,92 @@ gsap.from('#depth-indicator', { x:-20, opacity:0, duration:1, ease:'power3.out',
 gsap.from('#scroll-hint', { x:20, opacity:0, duration:1, ease:'power3.out', delay:0.8 });
 gsap.from('#gauge', { opacity:0, duration:1, ease:'power3.out', delay:0.7 });
 gsap.from(layerEls[0], { opacity:0, duration:1.2, ease:'power3.out', delay:0.4 });
+</script>
+<script>
+(function(){
+  const FALLBACK = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+  const AUTOPLAY = true; // attempt muted autoplay on load
+
+  const audio = document.getElementById('bg-music');
+  const btn = document.getElementById('music-btn');
+  const vol = document.getElementById('music-vol');
+  const muteBtn = document.getElementById('music-mute');
+  if (!audio || !btn || !vol || !muteBtn) return;
+
+  // Restore persisted settings
+  const savedMuted = localStorage.getItem('apk_music_muted');
+  const savedVol = localStorage.getItem('apk_music_volume');
+  if (savedVol !== null) { vol.value = savedVol; audio.volume = parseFloat(savedVol); }
+  else audio.volume = parseFloat(vol.value || 0.6);
+  if (savedMuted !== null) audio.muted = savedMuted === '1';
+  function updateMuteText(){ muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute'; }
+  updateMuteText();
+
+  btn.addEventListener('click', async ()=>{
+    if (audio.paused){
+      try{ await audio.play(); }catch(e){ console.warn('Playback blocked:', e); }
+    } else {
+      audio.pause();
+    }
+  });
+
+  vol.addEventListener('input', ()=>{
+    audio.volume = parseFloat(vol.value);
+    localStorage.setItem('apk_music_volume', vol.value);
+  });
+
+  muteBtn.addEventListener('click', ()=>{
+    audio.muted = !audio.muted;
+    localStorage.setItem('apk_music_muted', audio.muted ? '1' : '0');
+    updateMuteText();
+    if (!audio.muted && audio.paused) audio.play().catch(()=>{});
+  });
+
+  audio.addEventListener('play', ()=> btn.textContent = 'Pause Music');
+  audio.addEventListener('pause', ()=> btn.textContent = 'Play Music');
+
+  // Fallback to an external sample if local file fails to load
+  audio.addEventListener('error', ()=>{
+    if (!audio.dataset.fallback){
+      audio.dataset.fallback = '1';
+      audio.src = FALLBACK;
+      audio.load();
+      audio.play().catch(()=>{});
+    }
+  });
+
+  // Attempt muted autoplay; on first user gesture, unmute if user hasn't explicitly muted
+  if (AUTOPLAY){
+    (async function tryAutoplay(){
+      const userSavedMuted = localStorage.getItem('apk_music_muted');
+      const prevMuted = audio.muted;
+      if (!userSavedMuted) audio.muted = true;
+      try{
+        await audio.play();
+        audio.dataset.autoplayed = '1';
+        btn.textContent = 'Pause Music';
+      }catch(e){ /* autoplay blocked */ }
+      // restore explicit saved muted state
+      if (userSavedMuted !== null) audio.muted = userSavedMuted === '1';
+      else audio.muted = prevMuted;
+    })();
+
+    const onFirstGesture = ()=>{
+      const userSavedMuted = localStorage.getItem('apk_music_muted');
+      if (audio.dataset.autoplayed && userSavedMuted === null){
+        audio.muted = false;
+        localStorage.setItem('apk_music_muted','0');
+        updateMuteText();
+      }
+      window.removeEventListener('click', onFirstGesture);
+      window.removeEventListener('keydown', onFirstGesture);
+      window.removeEventListener('touchstart', onFirstGesture);
+    };
+    window.addEventListener('click', onFirstGesture, {once:true});
+    window.addEventListener('keydown', onFirstGesture, {once:true});
+    window.addEventListener('touchstart', onFirstGesture, {once:true});
+  }
+})();
 </script>
 </body>
 </html>
