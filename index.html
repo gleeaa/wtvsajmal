@@ -325,7 +325,6 @@ nav{
 }
 
 @media (max-width: 640px) {
-  body { touch-action: pan-y; }
   nav { padding:18px 20px; }
   .nav-logo { font-size:11px; }
   .nav-links { gap:14px; flex-wrap:wrap; justify-content:flex-end; }
@@ -333,17 +332,11 @@ nav{
   #depth-indicator, #scroll-hint { display:none; }
   #gauge { display:none; }
   #music-control { display:none; }
-  /* Make section surfaces scrollable on mobile so users can drag to view content
-     while preserving joystick-only navigation between sections. */
+  /* Surfaces with overflow visible for clean mobile navigation without scroll conflicts */
   .surface {
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    -ms-overflow-style: none; /* IE/Edge */
-    scrollbar-width: none; /* Firefox */
-    padding-right: 12px; /* small inner padding so content isn't flush to edge */
+    overflow: visible;
+    padding-right: 0;
   }
-  .surface::-webkit-scrollbar { width: 0; height: 0; }
   #mobile-joystick { display:block; }
   .surface { width:min(92vw, 640px) !important; padding:20px 18px 24px; }
   .eyebrow { margin-bottom:18px; }
@@ -683,6 +676,7 @@ const gaugeDot = document.getElementById('gauge-dot');
 let scrollZ = 0;
 let targetScrollZ = 0;
 let currentSectionIndex = 0;
+let panOffsetX = 0, panOffsetY = 0; // persistent pan offset for joystick
 
 function clampTarget(z){
   return Math.max(0, Math.min((TOTAL - 1) * Z_STEP, z));
@@ -721,6 +715,8 @@ let scrollCooldown = false;
 function goToIndex(i){
   currentSectionIndex = Math.max(0, Math.min(TOTAL - 1, i));
   targetScrollZ = clampTarget(currentSectionIndex * Z_STEP);
+  panOffsetX = 0;
+  panOffsetY = 0;
   flashScanline();
 }
 function flashScanline(){
@@ -738,38 +734,38 @@ window.addEventListener('wheel', (e)=>{
   setTimeout(()=>{ scrollCooldown = false; }, 550);
 }, {passive:false});
 
-// ─── MOBILE CONTENT PAN (drag follows finger 1:1, like desktop cursor) ──────
-let panStartX = 0, panStartY = 0;
-let panActive = false;
-let lastPanX = 0, lastPanY = 0;
+// ─── MOBILE SURFACE DRAG (navigates sections up/down) ──────
+let dragStartX = 0, dragStartY = 0;
+let dragActive = false;
 
 window.addEventListener('touchstart', e=>{
-  if (joystickActive) return; // don't pan if joystick is active
-  panStartX = e.touches[0].clientX;
-  panStartY = e.touches[0].clientY;
-  lastPanX = 0;
-  lastPanY = 0;
-  panActive = true;
+  if (joystickActive) return;
+  dragStartX = e.touches[0].clientX;
+  dragStartY = e.touches[0].clientY;
+  dragActive = true;
 }, {passive:true});
 
 window.addEventListener('touchmove', e=>{
-  if (!panActive || joystickActive) return;
-  const dx = (e.touches[0].clientX - panStartX) * 0.6; // dampen to 60% speed
-  const dy = (e.touches[0].clientY - panStartY) * 0.6;
-  lastPanX = dx;
-  lastPanY = dy;
-  const currentLayer = layerEls[Math.round(scrollZ / Z_STEP)];
-  if (currentLayer){
-    currentLayer.style.transform = `translate(-50%,-50%) translate3d(${dx}px,${dy}px,${-Math.round(scrollZ / Z_STEP) * Z_STEP}px)`;
+  if (!dragActive || joystickActive) return;
+  const dy = (e.touches[0].clientY - dragStartY);
+  // Swipe up = next section, swipe down = prev section
+  if (Math.abs(dy) > 60){
+    const dir = dy > 0 ? -1 : 1; // down swipe -> next section
+    if (!scrollCooldown){
+      goToIndex(currentSectionIndex + dir);
+      scrollCooldown = true;
+      setTimeout(()=>{ scrollCooldown = false; }, 550);
+      dragStartY = e.touches[0].clientY; // reset to prevent double-nav
+    }
   }
 }, {passive:true});
 
 window.addEventListener('touchend', e=>{
-  if (!panActive) return;
-  panActive = false;
+  if (!dragActive) return;
+  dragActive = false;
 }, {passive:true});
 
-// ─── MOBILE JOYSTICK RADIAL NAVIGATION ────────────────────────────
+// ─── MOBILE JOYSTICK (pans within surface, pan persists) ────────────────────────
 const joystick = document.getElementById('mobile-joystick');
 const joystickDot = document.getElementById('joystick-dot');
 let joystickTouchStartX = 0, joystickTouchStartY = 0;
@@ -788,8 +784,13 @@ if (joystick){
     if (!joystickActive) return;
     e.preventDefault();
     const touch = e.touches[0];
-    const dx = touch.clientX - joystickTouchStartX;
-    const dy = touch.clientY - joystickTouchStartY;
+    const dx = (touch.clientX - joystickTouchStartX) * 0.6; // dampen to 60% speed
+    const dy = (touch.clientY - joystickTouchStartY) * 0.6;
+    const currentLayer = layerEls[Math.round(scrollZ / Z_STEP)];
+    if (currentLayer){
+      currentLayer.style.transform = `translate(-50%,-50%) translate3d(${panOffsetX + dx}px,${panOffsetY + dy}px,${-Math.round(scrollZ / Z_STEP) * Z_STEP}px)`;
+    }
+    // Visual feedback: move dot to show joystick position
     const maxDist = 40;
     const dist = Math.sqrt(dx * dx + dy * dy);
     const clampedDist = Math.min(dist, maxDist);
@@ -803,30 +804,19 @@ if (joystick){
     if (!joystickActive) return;
     joystickActive = false;
     const touch = e.changedTouches[0];
-    const dx = touch.clientX - joystickTouchStartX;
-    const dy = touch.clientY - joystickTouchStartY;
-    const threshold = 25;
-    const absDx = Math.abs(dx);
-    const absDy = Math.abs(dy);
-    
-    // Determine primary direction
-    if (Math.max(absDx, absDy) >= threshold){
-      if (absDy > absDx){
-        // Vertical: up or down navigation
-        const dir = dy > 0 ? 1 : -1; // drag down in joystick -> next section, drag up -> prev section
-        if (!scrollCooldown){
-          goToIndex(currentSectionIndex + dir);
-          scrollCooldown = true;
-          setTimeout(()=>{ scrollCooldown = false; }, 550);
-        }
-      } else {
-        // Horizontal: ignore
-      }
-    }
+    const dx = (touch.clientX - joystickTouchStartX) * 0.6;
+    const dy = (touch.clientY - joystickTouchStartY) * 0.6;
+    // Update persistent pan offset with the final pan from this gesture
+    panOffsetX += dx;
+    panOffsetY += dy;
+    // Keep pan offset within reasonable bounds
+    panOffsetX = Math.max(-200, Math.min(200, panOffsetX));
+    panOffsetY = Math.max(-200, Math.min(200, panOffsetY));
     joystickDot.style.transform = 'translate(-50%, -50%)';
   }, {passive:false});
 }
 
+// Navigation via nav links
 document.querySelectorAll('[data-nav]').forEach(a=>{
   a.addEventListener('click', e=>{ e.preventDefault(); goToIndex(parseInt(a.dataset.nav,10)); });
 });
