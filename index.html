@@ -379,7 +379,7 @@ nav{
 <canvas id="bg-canvas"></canvas>
 
 <!-- Music: local file `music.mp3` (place in project root) — fallback used when local missing -->
-<audio id="bg-music" src="music.mp3" loop preload="auto"></audio>
+<audio id="bg-music" src="music.mp3" loop preload="auto" muted></audio>
 <div id="music-control" style="position:fixed;left:20px;bottom:20px;z-index:120;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.08);padding:6px 10px;border-radius:4px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.05);">
   <button id="music-btn" style="background:transparent;color:rgba(240,240,240,0.6);border:1px solid rgba(255,255,255,0.08);padding:4px 8px;border-radius:3px;cursor:pointer;font-size:10px;font-weight:500;">Play</button>
   <input id="music-vol" type="range" min="0" max="1" step="0.01" value="0.6" style="width:80px;height:2px;cursor:pointer;accent-color:var(--cyan);" aria-label="Volume">
@@ -1032,30 +1032,37 @@ gsap.from(layerEls[0], { opacity:0, duration:1.2, ease:'power3.out', delay:0.4 }
     }
   });
 
-  // Attempt autoplay with sound
+  // Attempt immediate autoplay (muted by default for browser policies)
   if (AUTOPLAY){
-    (async function tryAutoplay(){
-      try{
-        audio.muted = false;
-        await audio.play();
-        audio.dataset.autoplayed = '1';
-        btn.textContent = '⏸';
-      }catch(e){
-        // Autoplay blocked by browser policy; will play on first user gesture
-        audio.muted = true;
-      }
-    })();
-
-    // On first user gesture, if autoplay was blocked, try to play unmuted
-    const onFirstGesture = async ()=>{
-      if (!audio.dataset.autoplayed){
-        try{
-          audio.muted = false;
-          await audio.play();
+    const attemptPlay = async () => {
+      try {
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          await playPromise;
           audio.dataset.autoplayed = '1';
           btn.textContent = '⏸';
-        }catch(e){ /* still blocked */ }
+        }
+      } catch(e) {
+        // Retry after a small delay
+        setTimeout(() => {
+          audio.play().catch(() => {});
+        }, 100);
       }
+    };
+
+    // Try immediately
+    attemptPlay();
+
+    // Try again when audio is ready
+    if (audio.readyState > 0) {
+      attemptPlay();
+    } else {
+      audio.addEventListener('canplay', attemptPlay, { once: true });
+    }
+
+    // On first user gesture, unmute
+    const onFirstGesture = () => {
+      audio.muted = false;
       window.removeEventListener('click', onFirstGesture);
       window.removeEventListener('keydown', onFirstGesture);
       window.removeEventListener('touchstart', onFirstGesture);
