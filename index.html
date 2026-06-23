@@ -295,6 +295,24 @@ nav{
   z-index:200;opacity:0;pointer-events:none;
 }
 
+/* MOBILE JOYSTICK — radial navigation control */
+#mobile-joystick{
+  display:none;
+  position:fixed;bottom:40px;right:40px;z-index:110;
+  width:100px;height:100px;border-radius:50%;
+  border:2px solid rgba(0,245,212,0.25);
+  background:rgba(0,245,212,0.02);
+  pointer-events:auto;
+}
+#joystick-dot{
+  position:absolute;left:50%;top:50%;
+  width:20px;height:20px;border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 12px rgba(0,245,212,0.6);
+  transform:translate(-50%,-50%);
+  transition:transform 0.05s ease-out;
+}
+
 @media (max-width: 880px){
   #gauge{ display:none; }
   .stats-scatter{ width:100%;height:auto;display:flex;flex-direction:column;gap:24px; }
@@ -315,6 +333,7 @@ nav{
   #depth-indicator, #scroll-hint { display:none; }
   #gauge { display:none; }
   #music-control { display:none; }
+  #mobile-joystick { display:block; }
   .surface { width:min(92vw, 640px) !important; padding:20px 18px 24px; }
   .eyebrow { margin-bottom:18px; }
   .hero-name { font-size:clamp(44px,13vw,72px); }
@@ -348,6 +367,10 @@ nav{
 <div id="scanline"></div>
 <div id="cursor"></div>
 <div id="cursor-ring"></div>
+
+<div id="mobile-joystick">
+  <div id="joystick-dot"></div>
+</div>
 
 <canvas id="bg-canvas"></canvas>
 
@@ -704,16 +727,64 @@ window.addEventListener('wheel', (e)=>{
   setTimeout(()=>{ scrollCooldown = false; }, 550);
 }, {passive:false});
 
-let touchStartY = 0;
-window.addEventListener('touchstart', e=>{ touchStartY = e.touches[0].clientY; }, {passive:true});
-window.addEventListener('touchend', e=>{
-  const dy = touchStartY - e.changedTouches[0].clientY;
-  if (Math.abs(dy) > 40 && !scrollCooldown){
-    goToIndex(currentSectionIndex + (dy > 0 ? 1 : -1));
-    scrollCooldown = true;
-    setTimeout(()=>{ scrollCooldown = false; }, 550);
-  }
-}, {passive:true});
+// ─── MOBILE JOYSTICK RADIAL NAVIGATION ────────────────────────────
+const joystick = document.getElementById('mobile-joystick');
+const joystickDot = document.getElementById('joystick-dot');
+let joystickTouchStartX = 0, joystickTouchStartY = 0;
+let joystickActive = false;
+
+if (joystick){
+  joystick.addEventListener('touchstart', e=>{
+    e.preventDefault();
+    joystickActive = true;
+    const rect = joystick.getBoundingClientRect();
+    joystickTouchStartX = rect.left + rect.width / 2;
+    joystickTouchStartY = rect.top + rect.height / 2;
+  }, {passive:false});
+
+  joystick.addEventListener('touchmove', e=>{
+    if (!joystickActive) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const dx = touch.clientX - joystickTouchStartX;
+    const dy = touch.clientY - joystickTouchStartY;
+    const maxDist = 40;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const clampedDist = Math.min(dist, maxDist);
+    const angle = Math.atan2(dy, dx);
+    const finalX = Math.cos(angle) * clampedDist;
+    const finalY = Math.sin(angle) * clampedDist;
+    joystickDot.style.transform = `translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px))`;
+  }, {passive:false});
+
+  joystick.addEventListener('touchend', e=>{
+    if (!joystickActive) return;
+    joystickActive = false;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - joystickTouchStartX;
+    const dy = touch.clientY - joystickTouchStartY;
+    const threshold = 25;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    
+    // Determine primary direction
+    if (Math.max(absDx, absDy) >= threshold){
+      if (absDy > absDx){
+        // Vertical: up or down
+        const dir = dy > 0 ? 1 : -1;
+        if (!scrollCooldown){
+          goToIndex(currentSectionIndex + dir);
+          scrollCooldown = true;
+          setTimeout(()=>{ scrollCooldown = false; }, 550);
+        }
+      } else {
+        // Horizontal: left or right
+        // Currently no action, but can be extended
+      }
+    }
+    joystickDot.style.transform = 'translate(-50%, -50%)';
+  }, {passive:false});
+}
 
 document.querySelectorAll('[data-nav]').forEach(a=>{
   a.addEventListener('click', e=>{ e.preventDefault(); goToIndex(parseInt(a.dataset.nav,10)); });
