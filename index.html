@@ -314,6 +314,7 @@ nav{
   .nav-links a { font-size:9px; }
   #depth-indicator, #scroll-hint { display:none; }
   #gauge { display:none; }
+  #music-control { display:none; }
   .surface { width:min(92vw, 640px) !important; padding:20px 18px 24px; }
   .eyebrow { margin-bottom:18px; }
   .hero-name { font-size:clamp(44px,13vw,72px); }
@@ -352,10 +353,9 @@ nav{
 
 <!-- Music: local file `music.mp3` (place in project root) — fallback used when local missing -->
 <audio id="bg-music" src="music.mp3" loop preload="auto"></audio>
-<div id="music-control" style="position:fixed;left:20px;bottom:20px;z-index:120;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,0.25);padding:8px;border-radius:8px;backdrop-filter:blur(6px);">
-  <button id="music-btn" style="background:rgba(255,255,255,0.06);color:var(--white);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:6px;cursor:pointer">Play Music</button>
-  <button id="music-mute" style="background:transparent;color:var(--white);border:1px solid rgba(255,255,255,0.06);padding:6px 8px;border-radius:6px;cursor:pointer">Mute</button>
-  <input id="music-vol" type="range" min="0" max="1" step="0.01" value="0.6" style="width:110px" aria-label="Volume">
+<div id="music-control" style="position:fixed;left:20px;bottom:20px;z-index:120;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.08);padding:6px 10px;border-radius:4px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.05);">
+  <button id="music-btn" style="background:transparent;color:rgba(240,240,240,0.6);border:1px solid rgba(255,255,255,0.08);padding:4px 8px;border-radius:3px;cursor:pointer;font-size:10px;font-weight:500;">Play</button>
+  <input id="music-vol" type="range" min="0" max="1" step="0.01" value="0.6" style="width:80px;height:2px;cursor:pointer;accent-color:var(--cyan);" aria-label="Volume">
 </div>
 <nav>
   <div class="nav-logo">APK.portfolio</div>
@@ -892,22 +892,17 @@ gsap.from(layerEls[0], { opacity:0, duration:1.2, ease:'power3.out', delay:0.4 }
 <script>
 (function(){
   const FALLBACK = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-  const AUTOPLAY = true; // attempt muted autoplay on load
+  const AUTOPLAY = true; // attempt autoplay with sound
 
   const audio = document.getElementById('bg-music');
   const btn = document.getElementById('music-btn');
   const vol = document.getElementById('music-vol');
-  const muteBtn = document.getElementById('music-mute');
-  if (!audio || !btn || !vol || !muteBtn) return;
+  if (!audio || !btn || !vol) return;
 
   // Restore persisted settings
-  const savedMuted = localStorage.getItem('apk_music_muted');
   const savedVol = localStorage.getItem('apk_music_volume');
   if (savedVol !== null) { vol.value = savedVol; audio.volume = parseFloat(savedVol); }
   else audio.volume = parseFloat(vol.value || 0.6);
-  if (savedMuted !== null) audio.muted = savedMuted === '1';
-  function updateMuteText(){ muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute'; }
-  updateMuteText();
 
   btn.addEventListener('click', async ()=>{
     if (audio.paused){
@@ -922,15 +917,8 @@ gsap.from(layerEls[0], { opacity:0, duration:1.2, ease:'power3.out', delay:0.4 }
     localStorage.setItem('apk_music_volume', vol.value);
   });
 
-  muteBtn.addEventListener('click', ()=>{
-    audio.muted = !audio.muted;
-    localStorage.setItem('apk_music_muted', audio.muted ? '1' : '0');
-    updateMuteText();
-    if (!audio.muted && audio.paused) audio.play().catch(()=>{});
-  });
-
-  audio.addEventListener('play', ()=> btn.textContent = 'Pause Music');
-  audio.addEventListener('pause', ()=> btn.textContent = 'Play Music');
+  audio.addEventListener('play', ()=> btn.textContent = '⏸');
+  audio.addEventListener('pause', ()=> btn.textContent = '⏵');
 
   // Fallback to an external sample if local file fails to load
   audio.addEventListener('error', ()=>{
@@ -942,28 +930,29 @@ gsap.from(layerEls[0], { opacity:0, duration:1.2, ease:'power3.out', delay:0.4 }
     }
   });
 
-  // Attempt muted autoplay; on first user gesture, unmute if user hasn't explicitly muted
+  // Attempt autoplay with sound
   if (AUTOPLAY){
     (async function tryAutoplay(){
-      const userSavedMuted = localStorage.getItem('apk_music_muted');
-      const prevMuted = audio.muted;
-      if (!userSavedMuted) audio.muted = true;
       try{
+        audio.muted = false;
         await audio.play();
         audio.dataset.autoplayed = '1';
-        btn.textContent = 'Pause Music';
-      }catch(e){ /* autoplay blocked */ }
-      // restore explicit saved muted state
-      if (userSavedMuted !== null) audio.muted = userSavedMuted === '1';
-      else audio.muted = prevMuted;
+        btn.textContent = '⏸';
+      }catch(e){
+        // Autoplay blocked by browser policy; will play on first user gesture
+        audio.muted = true;
+      }
     })();
 
-    const onFirstGesture = ()=>{
-      const userSavedMuted = localStorage.getItem('apk_music_muted');
-      if (audio.dataset.autoplayed && userSavedMuted === null){
-        audio.muted = false;
-        localStorage.setItem('apk_music_muted','0');
-        updateMuteText();
+    // On first user gesture, if autoplay was blocked, try to play unmuted
+    const onFirstGesture = async ()=>{
+      if (!audio.dataset.autoplayed){
+        try{
+          audio.muted = false;
+          await audio.play();
+          audio.dataset.autoplayed = '1';
+          btn.textContent = '⏸';
+        }catch(e){ /* still blocked */ }
       }
       window.removeEventListener('click', onFirstGesture);
       window.removeEventListener('keydown', onFirstGesture);
